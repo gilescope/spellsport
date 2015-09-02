@@ -1,0 +1,448 @@
+﻿<!DOCTYPE html>
+<html>
+    <title>SpellSport</title>
+    <script src="js/dictionary.js"></script>
+    <link rel="stylesheet" href="https://daneden.github.io/animate.css/animate.min.css" />
+    Name:
+    <input id="username" 
+        type="text" 
+        onkeydown="localStorage['currentUsername'] = document.getElementById('username').value;" />
+    Nicname:
+    <input id="nickname"
+        type="text" 
+        onkeydown="localStorage['currentNickname'] = document.getElementById('nickname').value;" />
+    Level:
+    <input id="level" 
+        type="text" 
+        onkeydown="if (document.getElementById('level').value > 1) {localStorage['currentLevel'] = document.getElementById('level').value; }" text="3"></input>
+    
+    <table>
+        <tr>
+            <td>
+<h1>SpellSport</h1>
+    <img width="200" 
+        onclick="sayTarget();flashTarget();document.getElementById('entry').focus();" 
+        src="http://www.hdwallpapersimages.com/wp-content/uploads/2015/01/Crocodile-Jaws-Open-Images.jpg" />
+    
+    <h1 id="target" class="fadeOut animated">target</h1>
+    <h2 id="showguess">_______</h2>
+    <input id="entry" type="text" onkeydown="if (event.keyCode == 13) { check(); }" />
+    <button id="gobutton" onclick="check()" >Try!</button>
+    <button id="soundbutton" onclick="sayGuess()" >Speak!</button>
+    <button id="skipbutton" onclick="next()" >Skip</button>
+ 
+    <h2 id="winningstreak">Winning Streak: 0</h2>
+    <h2 id="bestwinningstreak"></h2>
+            
+            </td>
+            <td width="70%">
+            <br/>
+            </td>
+        </tr>
+    </table>
+
+
+
+    <script>
+    "use strict";
+    //var wordList = [ "Are you sure?", "Wonderful", "Impeccable", "Beer", "Wine", "Goggles", "Giles", "Christine" ];
+    var wordList = ['a','alone','ask','beg','build',
+'able','along','assist','began','built',
+'aboard','already','associate','begin','burn',
+'about','also','association','beginning','business',
+'above','although','assure','begun','busy',
+'absence','always','at','behind','but',
+'accept','am','athletic','believe','buy',
+'accident','among','attempt','belong','by',
+'according','amount','attend','beside','call',
+'account','an','attention','best','came',
+'across','and','August','better','camp',
+'act','annual','aunt','between','can',
+'action','another','auto','big','cannot',
+'add','answer','automobile','bill','capture',
+'addition','any','avenue','black','car',
+'address','anything','await','block','card',
+'adopt','anyway','away','blow','care',
+'affair','appear','awful','blue','career',
+'afraid','application','baby','board','carried',
+'after','appoint','back','boat','carry',
+'afternoon','appreciate','bad','body','case',
+'again','April','ball','book','cast',
+'against','are','band','born','catch',
+'age','argument','be','both','cause',
+'ago','army','bear','bought','celebration',
+'agreement','around','beautiful','box','cent',
+'air','arrange','became','boy','centre',
+'alike','arrangement','because','bridge','century',
+'all','arrest','become','bring','certain',
+'allege','arrive','bed','broke','chain',
+'allow','article','been','brother','change',
+'almost','as','before','brought','character','',
+'charge','convention','disappoint','end','feature',
+'check','convict','discussion','engage','February',
+'chief','copy','distinguish','engine','feel',
+'child','cordially','distribute','enjoy','feet',
+'children','cost','district','enough','fell',
+'Christmas','could','divide','enter','felt',
+'church','country','do','entertain','few',
+'circular','course','doctor','entire','field',
+'circumstance','court','does','entitle','fifth',
+'cities','cover','dollar','entrance','fight',
+'citizen','crowd','don’t','escape','figure',
+'city','cut','done','especially','file',
+'claim','dark','door','estate','fill',
+'class','dash','doubt','estimate','final',
+'clean','date','down','even','finally',
+'clear','daughter','dozen','evening','find',
+'clerk','day','dress','event','fine',
+'close','dead','drill','ever','finish',
+'clothing','deal','driven','every','fire',
+'club','dear','drown','everything','firm',
+'cold','death','due','evidence','first',
+'collect','debate','during','examination','five',
+'colonies','December','duty','except','fix',
+'combination','decide','each','expect','flight',
+'come','decision','earliest','expense','folks',
+'comfort','declare','early','experience','follow',
+'coming','deep','east','express','foot',
+'command','degree','easy','extra','for',
+'committee','delay','eat','extreme','foreign',
+'common','department','education','eye','forenoon',
+'company','desire','effect','face','forget',
+'complaint','destroy','effort','fact','form',
+'complete','develop','eight','factory','fortune',
+'concern','diamond','either','fail','forty',
+'condition','did','elaborate','fair','forward',
+'conference','died','elect','fall','found',
+'connection','difference','election','family','four',
+'consider','different','else','famous','fourth',
+'consideration','difficulty','emergency','far','free',
+'contain','direct','empire','farther','Friday',
+'contract','direction','employ','father','friend',
+'convenient','director','enclose','favour','from',
+'front','held','inspect','less','meet',
+'full','help','instead','lesson','member',
+'further','her','intend','let','men',
+'game','here','interest','letter','mention',
+'gave','herself','into','liberty','mere',
+'general','high','investigate','life','might',
+'gentleman','him','invitation','light','mile',
+'get','himself','is','like','mind',
+'getting','his','issue','line','mine',
+'girl','history','it','list','minute',
+'give','hold','its','little','Miss',
+'glad','home','itself','live','miss',
+'glass','honour','jail','local','Monday',
+'go','hope','January','long','money',
+'God','horse','judge','look','month',
+'goes','hot','judgment','lose','more',
+'gold','hour','July','loss','morning',
+'gone','house','June','lost','most',
+'good','how','just','lot','mother',
+'got','however','justice','love','motion',
+'government','human','keep','low','mountain',
+'grand','hurt','kill','machine','move',
+'grant','husband','kind','madam','Mr.',
+'great','I','knew','made','Mrs.',
+'ground','ice','know','mail','much',
+'guess','if','known','majority','must',
+'guest','illustrate','lady','make','my',
+'had','immediate','lake','man','name',
+'half','importance','land','manner','national',
+'hand','important','large','many','navy',
+'happen','impossible','last','March','near',
+'happy','imprison','late','marriage','nearly',
+'hard','improvement','law','material','necessary',
+'has','in','lay','matter','need',
+'hat','include','lead','may','neighbour',
+'have','income','learn','May','neither',
+'he','increase','least','maybe','never',
+'head','indeed','leave','mayor','new',
+'hear','inform','led','me','news',
+'heard','information','ledge','mean','newspaper',
+'heart','injure','left','meant','next',
+'height','inside','length','measure','nice','',
+'night','own','press','receive','saw',
+'nine','page','pretty','recent','say',
+'no','paid','price','recommend','says',
+'none','pair','primary','recover','scene',
+'noon','paper','principal','red','school',
+'north','part','principle','refer','sea',
+'not','particular','print','reference','search',
+'nothing','party','prison','refuse','second',
+'November','pass','private','regard','secretary',
+'now','past','probably','region','section',
+'number','pay','proceed','relative','subject',
+'o’clock','people','progress','relief','secure',
+'object','perfect','promise','remain','see',
+'objection','perhaps','prompt','remember','seem',
+'oblige','period','proper','repair','seen',
+'obtain','personal','property','reply','select',
+'occupy','picture','prove','report','senate',
+'October','piece','provide','represent','send',
+'of','place','provision','request','sent',
+'off','plan','public','respectfully','separate',
+'offer','plant','publication','responsible','September',
+'office','play','publish','rest','serious',
+'official','pleasant','purpose','restrain','serve',
+'often','please','push','result','service',
+'old','pleasure','put','retire','session',
+'omit','point','question','return','set',
+'on','police','quite','ride','seven',
+'once','political','race','right','several',
+'one','poor','railroad','ring','shall',
+'only','popular','rain','river','she',
+'open','population','raise','road','shed',
+'opinion','position','ran','room','ship',
+'or','possible','rapid','round','short',
+'order','post','rate','royal','should',
+'organisation','pound','rather','rule','show',
+'organise','power','reach','run','shut',
+'other','practical','read','running','sick',
+'ought','prefer','ready','said','side',
+'our','preliminary','real','sail','sight',
+'out','prepare','really','salary','since',
+'outside','present','reason','same','sincerely',
+'over','president','receipt','Saturday','sir',
+'sister','study','think','under','whether',
+'sit','success','third','understand','which',
+'six','such','this','unfortunate','while',
+'size','sudden','those','unless','who',
+'slide','suffer','though','until','whole',
+'slower','suggest','thought','up','whom',
+'small','suit','three','upon','whose',
+'so','summer','through','us','why',
+'soap','summon','throw','use','wife',
+'soft','Sunday','Thursday','usual','will',
+'sold','supply','thus','vacation','wind',
+'some','support','ticket','various','winter',
+'something','suppose','time','very','wire',
+'sometimes','sure','tire','vessel','wish',
+'son','surprise','to','victim','with',
+'song','system','today','view','within',
+'soon','table','together','visit','without',
+'sorry','take','told','visitor','witness',
+'south','talk','tomorrow','vote','women',
+'speak','tax','tonight','volume','wonder',
+'special','teach','too','wait','wonderful',
+'spell','teacher','took','walk','word',
+'spend','tell','top','want','work',
+'spent','ten','total','war','world',
+'spring','tenth','toward','warm','worth',
+'stamp','term','town','was','would',
+'stand','terrible','track','watch','wreck',
+'start','testimony','train','water','write',
+'state','than','travel','way','written',
+'statement','thank','treasure','we','wrote',
+'station','that','tree','wear','yard',
+'stay','the','trip','weather','year',
+'steamer','theater','trouble','Wednesday','yes',
+'still','their','true','week','yesterday',
+'stole','them','truly','weigh','yet',
+'stone','themselves','trust','well','you',
+'stood','then','try','went','young',
+'stop','there','Tuesday','were','your',
+'stopped','therefore','turn','west',
+'story','these','two','what',
+'street','they','unable','when',
+'struck','thing','uncle','where'];
+
+
+    var winningstreak = 0;
+    var wordsAttempted = 0;
+    var attemptsOnCurrentWord = 0;
+   var wordsCorrect = 0;
+    var currentUser = ""
+
+    var keys = Object.keys(dictionary);
+    var target = pickNextWord();
+    document.getElementById("target").innerText = target;
+
+
+
+function sayGuess() {
+    var guess = document.getElementById("entry").value;
+    var utter = new SpeechSynthesisUtterance(guess); 
+    utter.lang = 'en-UK'; 
+    utter.rate = 0.5;
+    window.speechSynthesis.speak(utter);document.getElementById('entry').focus();
+}
+
+function sayTarget() {
+    var utter = new SpeechSynthesisUtterance(target); 
+    utter.lang = 'en-UK'; 
+    utter.rate = 0.5;
+    window.speechSynthesis.speak(utter);document.getElementById('entry').focus();
+}
+
+function flashTarget() {
+    if (document.getElementById("target").className === "fadeOut animated")
+    {
+        document.getElementById("target").className = "fadeOutRight animated";
+    }
+    else
+    {
+        document.getElementById("target").className = "fadeOut animated";            
+    }
+}
+
+function pickNextWord()
+{
+    var level = document.getElementById("level").value;
+    if (level < 2)
+        level = 2;
+
+    var target;
+    do {
+    //  target = keys[ keys.length * Math.random() << 0];
+        target = wordList[Math.floor((Math.random() * wordList.length))];
+    } while (target.length > level + 2)
+
+    return target;
+}
+
+function next() {
+        wordsAttempted = wordsAttempted + 1;
+        attemptsOnCurrentWord = 0;
+        document.getElementById("entry").style.backgroundColor = "white";
+        document.getElementById("entry").value = "";
+        document.getElementById("gobutton").innerText = "Try!"; 
+        document.getElementById("showguess").innerText = ""     
+        target = pickNextWord();
+
+        document.getElementById("target").innerText = target;
+        flashTarget();
+        sayTarget();
+}
+
+function setLevel(level)
+{
+    document.getElementById("level").value = level;
+    localStorage['currentLevel'] = level;
+}
+
+function getLevel()
+{
+    return  parseInt(document.getElementById("level").value);
+}
+
+
+function check() {
+    if (document.getElementById("gobutton").innerText === "Next")
+    {
+        next();
+        return;  
+    }
+    
+    var guess = document.getElementById("entry").value;
+    if (guess.toUpperCase() === target.toUpperCase())
+    {
+        if (attemptsOnCurrentWord === 0)
+        {
+            wordsCorrect = wordsCorrect + 1
+            if (typeof localStorage[ username + target] === "undefined")
+            {
+                localStorage[ username + target] = 1;
+            }
+            else
+                localStorage[ username + target] = localStorage[username + target] + 1
+        }
+        
+        winningstreak = winningstreak + 1
+
+        if (wordsCorrect > 5 && wordsAttempted === 10)
+        {
+            window.open('svg/Level1.svg', 'show')
+            setLevel(getLevel() + 1);
+        }
+        else if (wordsCorrect > 10 && wordsAttempted === 20)
+        {
+            window.open('svg/Level2.svg', 'show')
+            setLevel(getLevel() + 1);
+            wordsCorrect = 0;
+            wordsAttempted = 0;            
+        }
+        else if (wordsCorrect > 15 && wordsAttempted === 30)
+        {
+            window.open('svg/Level3.svg', 'show')
+            setLevel(getLevel() + 1);
+            wordsCorrect = 0;
+            wordsAttempted = 0;
+        }
+
+        var username = document.getElementById("username").value;
+        var bestWinningstreak = localStorage["highscore" + username];
+        if (typeof bestWinningstreak === "undefined")
+        {
+            bestWinningstreak = 0;
+        }
+
+        if (bestWinningstreak < winningstreak)
+        {
+            localStorage["highscore" + username] = winningstreak;
+        }
+
+        document.getElementById("winningstreak").innerText = username + "'s winning Streak: " + winningstreak
+        document.getElementById("bestwinningstreak").innerText = username + "'s all time winning Streak: " + bestWinningstreak
+        document.getElementById("entry").style.backgroundColor = "green";
+        document.getElementById("gobutton").innerText = "Next";
+        var description = dictionary[target];
+        if (typeof description === "undefined")
+        {
+            description = "Well done!";
+        }
+        document.getElementById("showguess").innerText = description;
+    }
+    else
+    {
+        attemptsOnCurrentWord = attemptsOnCurrentWord + 1;
+        winningstreak = 0;
+        document.getElementById("winningstreak").innerText = "Winning Streak: " + winningstreak
+        var hint = "";
+        for (var i = 0; i < target.length; i++)
+        {
+            if (i < guess.length && target[i].toUpperCase() === guess[i].toUpperCase())
+            {
+                hint = hint + target[i] ;
+            }
+            else {
+                hint = hint + "_";
+            }
+        }
+
+        var j = guess.length - 1;
+        for (var i = target.level -1 ; i >= 0; i--)
+        {
+            if (target[i].toUpperCase() === guess[j].toUpperCase())
+            {
+                j = j - 1;
+            }
+            else {
+                break;
+            }
+        }
+
+
+
+        //Help
+
+        if (document.getElementById("target").className === "fadeOut animated")
+        {
+            document.getElementById("target").className = "fadeOutRight animated";
+        }
+        else
+        {
+            document.getElementById("target").className = "fadeOut animated";            
+        }
+
+        document.getElementById("showguess").innerText = hint
+    }
+}
+
+if (localStorage['currentUsername'])
+{
+    document.getElementById("username").value = localStorage['currentUsername'];
+    document.getElementById("level").value = localStorage['currentLevel'];
+}
+    </script>
+</html>
