@@ -1,8 +1,20 @@
-﻿<!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="en" ng-app="spellSportApp">
+<head>
+  <meta charset="utf-8">
     <title>SpellSport</title>
     <script src="js/dictionary.js"></script>
-    <link rel="stylesheet" href="https://daneden.github.io/animate.css/animate.min.css" />
+    <script src="js/jasmine.js"></script>
+    <script src="js/jasmine-html.js"></script>
+    <script src="js/angular.min.js"></script>
+    <script src="js/angular-mocks.js"></script>
+    <!--script src="js/require.2.1.20.js"></script-->
+    <!--script src="bundle.js"></script-->
+    <script type="text/javascript" src="js/clj-fuzzy.js" ></script>
+    </head>
+<body ng-controller="SpellingController">
+    <link rel="stylesheet" href="css/animate.min.css" />
+    <link rel="stylesheet" href="css/jasmine.css" />
     Name:
     <input id="username" 
         type="text" 
@@ -22,7 +34,7 @@
 <h1>SpellSport</h1>
     <img width="200" 
         onclick="sayTarget();flashTarget();document.getElementById('entry').focus();" 
-        src="http://www.hdwallpapersimages.com/wp-content/uploads/2015/01/Crocodile-Jaws-Open-Images.jpg" />
+        src="img/Crocodile.jpg" />
     
     <h1 id="target" class="fadeOut animated">target</h1>
     <h2 id="showguess">_______</h2>
@@ -31,7 +43,7 @@
     <button id="soundbutton" onclick="sayGuess()" >Speak!</button>
     <button id="skipbutton" onclick="next()" >Skip</button>
  
-    <h2 id="winningstreak">Winning Streak: 0</h2>
+    <h2 id="winningstreak">Winning Streak: 0 {{ current.winningstreak }}</h2>
     <h2 id="bestwinningstreak"></h2>
             
             </td>
@@ -45,7 +57,23 @@
 
     <script>
     "use strict";
-    //var wordList = [ "Are you sure?", "Wonderful", "Impeccable", "Beer", "Wine", "Goggles", "Giles", "Christine" ];
+
+//(function() {         
+
+/* TODO list
+
+List of your hardest words.
+Could pick the correct definition of the word.
+Could highlight subwords.
+Could highlight sounds (and alternative soundings).
+Could award certificate 
+
+*/
+
+        
+        
+        
+    //var wordList = [ "Nessisary", "Success", "Urgent", "Excellent", "Dicipline", "Gigantic", "Generous" ];
     var wordList = ['a','alone','ask','beg','build',
 'able','along','assist','began','built',
 'aboard','already','associate','begin','burn',
@@ -271,7 +299,7 @@ function sayGuess() {
 function sayTarget() {
     var utter = new SpeechSynthesisUtterance(target); 
     utter.lang = 'en-UK'; 
-    utter.rate = 0.5;
+    utter.rate = 1;
     window.speechSynthesis.speak(utter);document.getElementById('entry').focus();
 }
 
@@ -326,6 +354,7 @@ function getLevel()
     return  parseInt(document.getElementById("level").value);
 }
 
+var distance;
 
 function check() {
     if (document.getElementById("gobutton").innerText === "Next")
@@ -337,6 +366,18 @@ function check() {
     var guess = document.getElementById("entry").value;
     if (guess.toUpperCase() === target.toUpperCase())
     {
+       
+
+   var description;
+    for (var k = 0; k < keys.length; k++)
+    {
+        if (keys[k].toUpperCase() === guess.toUpperCase())
+        {
+            description = dictionary[keys[k]];
+        }
+    }
+    description = "&lt;b&gt;" + clj_fuzzy.stemmers.lovins(target) + "&lt;/b&gt; stem of  " +  target + ": " + description;
+
         if (attemptsOnCurrentWord === 0)
         {
             wordsCorrect = wordsCorrect + 1
@@ -359,15 +400,11 @@ function check() {
         {
             window.open('svg/Level2.svg', 'show')
             setLevel(getLevel() + 1);
-            wordsCorrect = 0;
-            wordsAttempted = 0;            
         }
         else if (wordsCorrect > 15 && wordsAttempted === 30)
         {
             window.open('svg/Level3.svg', 'show')
             setLevel(getLevel() + 1);
-            wordsCorrect = 0;
-            wordsAttempted = 0;
         }
 
         var username = document.getElementById("username").value;
@@ -386,15 +423,28 @@ function check() {
         document.getElementById("bestwinningstreak").innerText = username + "'s all time winning Streak: " + bestWinningstreak
         document.getElementById("entry").style.backgroundColor = "green";
         document.getElementById("gobutton").innerText = "Next";
-        var description = dictionary[target];
+        //var description = dictionary[target];
         if (typeof description === "undefined")
         {
             description = "Well done!";
         }
-        document.getElementById("showguess").innerText = description;
+        document.getElementById("showguess").innerHTML = description;
     }
     else
     {
+	    var extrahint =""
+        var dist = clj_fuzzy.metrics.jaccard(guess, target);
+        if (attemptsOnCurrentWord > 0 && dist < distance)
+        {
+            extrahint = "Getting hotter :-)";
+        }
+        else if (attemptsOnCurrentWord > 0) {
+            extrahint = "Getting colder..."
+        }
+        else{            
+            distance = dist;
+        }
+
         attemptsOnCurrentWord = attemptsOnCurrentWord + 1;
         winningstreak = 0;
         document.getElementById("winningstreak").innerText = "Winning Streak: " + winningstreak
@@ -435,7 +485,16 @@ function check() {
             document.getElementById("target").className = "fadeOut animated";            
         }
 
-        document.getElementById("showguess").innerText = hint
+
+        if(!clj_fuzzy.metrics.mra_comparison(target,guess).match)
+	    {
+	       hint = hint + " (listen to the word again carefully - you've not quite got the right sounds.')";   
+	    }
+	    else {
+	       hint = hint + " (it sounds about right)";
+	    }
+
+        document.getElementById("showguess").innerText = hint + extrahint;
     }
 }
 
@@ -444,5 +503,72 @@ if (localStorage['currentUsername'])
     document.getElementById("username").value = localStorage['currentUsername'];
     document.getElementById("level").value = localStorage['currentLevel'];
 }
+
+
+var spellSportApp = angular.module('spellSportApp', []);
+
+var SpellingController = spellSportApp.controller('SpellingController', function ($scope) {
+    $scope.current = {
+        winningstreak: 0
+    };
+});
+
+describe('SpellingController Tests', function() {
+  beforeEach(module('spellSportApp'));
+
+  describe('SpellingController', function(){
+    var scope, ctrl, $httpBackend;
+
+    beforeEach(inject(function($rootScope, $controller) {
+      scope = $rootScope.$new();
+      ctrl = $controller('SpellingController', {$scope: scope});
+    }));
+
+    it('should create "current" model with 0 winningstreak', inject(function($controller) {
+     var scope = {};
+     var ctrl = $controller('SpellingController', {$scope:scope});
+  
+     expect(scope.current.winningstreak).toBe(0);
+  }));
+
+});
+
+});
+
+//}).call(this);
+
+
+(function() {
+  var jasmineEnv = jasmine.getEnv();
+  jasmineEnv.updateInterval = 250;
+
+    var htmlReporter = new jasmine.HtmlReporter();
+  jasmineEnv.addReporter(htmlReporter);
+
+    jasmineEnv.specFilter = function(spec) {
+    return htmlReporter.specFilter(spec);
+  };
+
+    var currentWindowOnload = window.onload;
+  window.onload = function() {
+    if (currentWindowOnload) {
+      currentWindowOnload();
+    }
+
+    document.querySelector('.version').innerHTML = jasmineEnv.versionString();
+    execJasmine();
+  };
+
+  function execJasmine() {
+    jasmineEnv.execute();
+  }
+})();
+
+
     </script>
+    <span class="version"></span>
+    <script>
+  (document.querySelector(".version") || {}).innerHTML = (typeof jasmine !== "undefined") ? jasmine.version : "";
+</script>
+    </body>
 </html>
