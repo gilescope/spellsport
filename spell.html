@@ -7,53 +7,58 @@
     <script src="js/jasmine.js"></script>
     <script src="js/jasmine-html.js"></script>
     <script src="js/angular.min.js"></script>
+    <script src="js/angular-sanitize.min.js"></script>
     <script src="js/angular-mocks.js"></script>
-    <!--script src="js/require.2.1.20.js"></script-->
-    <!--script src="bundle.js"></script-->
-    <script type="text/javascript" src="js/clj-fuzzy.js" ></script>
-    </head>
-<body ng-controller="SpellingController">
+    <script src="js/clj-fuzzy.js" ></script>
+
+    <style>
+        .good {
+            color: green;
+        }
+
+        .bad {
+            color: red;
+        }
+    </style>
+
     <link rel="stylesheet" href="css/animate.min.css" />
     <link rel="stylesheet" href="css/jasmine.css" />
-    Name:
-    <input id="username" 
-        type="text" 
-        onkeydown="localStorage['currentUsername'] = document.getElementById('username').value;" />
-    Nicname:
-    <input id="nickname"
-        type="text" 
-        onkeydown="localStorage['currentNickname'] = document.getElementById('nickname').value;" />
-    Level:
-    <input id="level" 
-        type="text" 
-        onkeydown="if (document.getElementById('level').value > 1) {localStorage['currentLevel'] = document.getElementById('level').value; }" text="3"></input>
+</head>    
+<body ng-controller="SpellingController">
     
-    <table>
-        <tr>
-            <td>
-<h1>SpellSport</h1>
-    <img width="200" 
-        onclick="sayTarget();flashTarget();document.getElementById('entry').focus();" 
-        src="img/Crocodile.jpg" />
-    
-    <h1 id="target" class="fadeOut animated">target</h1>
-    <h2 id="showguess">_______</h2>
-    <input id="entry" type="text" onkeydown="if (event.keyCode == 13) { check(); }" />
-    <button id="gobutton" onclick="check()" >Try!</button>
-    <button id="soundbutton" onclick="sayGuess()" >Speak!</button>
-    <button id="skipbutton" onclick="next()" >Skip</button>
- 
-    <h2 id="winningstreak">Winning Streak: 0 {{ current.winningstreak }}</h2>
-    <h2 id="bestwinningstreak"></h2>
+    Name:    <input id="username" ng-model="current.user"       type="text" />
+    Nicname: <input id="nickname" ng-model="current.nickname"   type="text" />
+    Level:   <input id="level"    ng-model="current.level"      type="text" />
+
+   
+<table>
+    <tr>
+        <td>
+            <h1>SpellSport</h1>
+                <img width="200"
+                    ng-click="crocClicked()" 
+                    src="img/Crocodile.jpg" />
+
+            <h1 id="target" class="fadeOut animated">{{current.session.target}}</h1>
+            <div ng-bind-html="current.session.showguess"></div>
+
+            <input id="entry" ng-keydown="checkSoFar($event)" 
+                type="text" ng-enter="check()" ng-model="current.session.guess" />
+            <button id="gobutton" ng-click="check()" >Try!</button>
+            <button id="soundbutton" ng-click="sayGuess()" >Speak!</button>
+            <button id="skipbutton" ng-click="next()" >Skip</button>
+
+            <h2 id="winningstreak">Winning Streak: {{ current.session.winningstreak }}</h2>
+            <h2 id="bestwinningstreak">Best ever streak: {{ current.winningstreak }}}</h2>
             
             </td>
-            <td width="70%">
-            <br/>
+            <td width="70%" ng-controller="WordListCtrl">
+                <ul ng-repeat="word in words">
+                    <li>{{word.word}}<p> incorrect apptempts: {{word.fails}}</p></li>
+                </ul>
             </td>
         </tr>
     </table>
-
-
 
     <script>
     "use strict";
@@ -68,10 +73,9 @@ Could highlight subwords.
 Could highlight sounds (and alternative soundings).
 Could award certificate 
 
-*/
+could crossword? could battleships?
 
-        
-        
+*/
         
     //var wordList = [ "Nessisary", "Success", "Urgent", "Excellent", "Dicipline", "Gigantic", "Generous" ];
     var wordList = ['a','alone','ask','beg','build',
@@ -275,72 +279,17 @@ Could award certificate
 'street','they','unable','when',
 'struck','thing','uncle','where'];
 
-
-    var winningstreak = 0;
-    var wordsAttempted = 0;
-    var attemptsOnCurrentWord = 0;
-   var wordsCorrect = 0;
-    var currentUser = ""
-
+    /* model */
+   
     var keys = Object.keys(dictionary);
-    var target = pickNextWord();
-    document.getElementById("target").innerText = target;
-
-
-
-function sayGuess() {
-    var guess = document.getElementById("entry").value;
-    var utter = new SpeechSynthesisUtterance(guess); 
-    utter.lang = 'en-UK'; 
-    utter.rate = 0.5;
-    window.speechSynthesis.speak(utter);document.getElementById('entry').focus();
+    
+Storage.prototype.setObject = function(key, value) {
+    this.setItem(key, JSON.stringify(value));
 }
 
-function sayTarget() {
-    var utter = new SpeechSynthesisUtterance(target); 
-    utter.lang = 'en-UK'; 
-    utter.rate = 1;
-    window.speechSynthesis.speak(utter);document.getElementById('entry').focus();
-}
-
-function flashTarget() {
-    if (document.getElementById("target").className === "fadeOut animated")
-    {
-        document.getElementById("target").className = "fadeOutRight animated";
-    }
-    else
-    {
-        document.getElementById("target").className = "fadeOut animated";            
-    }
-}
-
-function pickNextWord()
-{
-    var level = document.getElementById("level").value;
-    if (level < 2)
-        level = 2;
-
-    var target;
-    do {
-    //  target = keys[ keys.length * Math.random() << 0];
-        target = wordList[Math.floor((Math.random() * wordList.length))];
-    } while (target.length > level + 2)
-
-    return target;
-}
-
-function next() {
-        wordsAttempted = wordsAttempted + 1;
-        attemptsOnCurrentWord = 0;
-        document.getElementById("entry").style.backgroundColor = "white";
-        document.getElementById("entry").value = "";
-        document.getElementById("gobutton").innerText = "Try!"; 
-        document.getElementById("showguess").innerText = ""     
-        target = pickNextWord();
-
-        document.getElementById("target").innerText = target;
-        flashTarget();
-        sayTarget();
+Storage.prototype.getObject = function(key) {
+    var value = this.getItem(key);
+    return value && JSON.parse(value);
 }
 
 function setLevel(level)
@@ -354,149 +303,7 @@ function getLevel()
     return  parseInt(document.getElementById("level").value);
 }
 
-var distance;
 
-function check() {
-    if (document.getElementById("gobutton").innerText === "Next")
-    {
-        next();
-        return;  
-    }
-    
-    var guess = document.getElementById("entry").value;
-    if (guess.toUpperCase() === target.toUpperCase())
-    {
-       
-
-   var description;
-    for (var k = 0; k < keys.length; k++)
-    {
-        if (keys[k].toUpperCase() === guess.toUpperCase())
-        {
-            description = dictionary[keys[k]];
-        }
-    }
-    description = "&lt;b&gt;" + clj_fuzzy.stemmers.lovins(target) + "&lt;/b&gt; stem of  " +  target + ": " + description;
-
-        if (attemptsOnCurrentWord === 0)
-        {
-            wordsCorrect = wordsCorrect + 1
-            if (typeof localStorage[ username + target] === "undefined")
-            {
-                localStorage[ username + target] = 1;
-            }
-            else
-                localStorage[ username + target] = localStorage[username + target] + 1
-        }
-        
-        winningstreak = winningstreak + 1
-
-        if (wordsCorrect > 5 && wordsAttempted === 10)
-        {
-            window.open('svg/Level1.svg', 'show')
-            setLevel(getLevel() + 1);
-        }
-        else if (wordsCorrect > 10 && wordsAttempted === 20)
-        {
-            window.open('svg/Level2.svg', 'show')
-            setLevel(getLevel() + 1);
-        }
-        else if (wordsCorrect > 15 && wordsAttempted === 30)
-        {
-            window.open('svg/Level3.svg', 'show')
-            setLevel(getLevel() + 1);
-        }
-
-        var username = document.getElementById("username").value;
-        var bestWinningstreak = localStorage["highscore" + username];
-        if (typeof bestWinningstreak === "undefined")
-        {
-            bestWinningstreak = 0;
-        }
-
-        if (bestWinningstreak < winningstreak)
-        {
-            localStorage["highscore" + username] = winningstreak;
-        }
-
-        document.getElementById("winningstreak").innerText = username + "'s winning Streak: " + winningstreak
-        document.getElementById("bestwinningstreak").innerText = username + "'s all time winning Streak: " + bestWinningstreak
-        document.getElementById("entry").style.backgroundColor = "green";
-        document.getElementById("gobutton").innerText = "Next";
-        //var description = dictionary[target];
-        if (typeof description === "undefined")
-        {
-            description = "Well done!";
-        }
-        document.getElementById("showguess").innerHTML = description;
-    }
-    else
-    {
-	    var extrahint =""
-        var dist = clj_fuzzy.metrics.jaccard(guess, target);
-        if (attemptsOnCurrentWord > 0 && dist < distance)
-        {
-            extrahint = "Getting hotter :-)";
-        }
-        else if (attemptsOnCurrentWord > 0) {
-            extrahint = "Getting colder..."
-        }
-        else{            
-            distance = dist;
-        }
-
-        attemptsOnCurrentWord = attemptsOnCurrentWord + 1;
-        winningstreak = 0;
-        document.getElementById("winningstreak").innerText = "Winning Streak: " + winningstreak
-        var hint = "";
-        for (var i = 0; i < target.length; i++)
-        {
-            if (i < guess.length && target[i].toUpperCase() === guess[i].toUpperCase())
-            {
-                hint = hint + target[i] ;
-            }
-            else {
-                hint = hint + "_";
-            }
-        }
-
-        var j = guess.length - 1;
-        for (var i = target.level -1 ; i >= 0; i--)
-        {
-            if (target[i].toUpperCase() === guess[j].toUpperCase())
-            {
-                j = j - 1;
-            }
-            else {
-                break;
-            }
-        }
-
-
-
-        //Help
-
-        if (document.getElementById("target").className === "fadeOut animated")
-        {
-            document.getElementById("target").className = "fadeOutRight animated";
-        }
-        else
-        {
-            document.getElementById("target").className = "fadeOut animated";            
-        }
-
-
-        if(!clj_fuzzy.metrics.mra_comparison(target,guess).match)
-	    {
-	       hint = hint + " (listen to the word again carefully - you've not quite got the right sounds.')";   
-	    }
-	    else {
-	       hint = hint + " (it sounds about right)";
-	    }
-
-        document.getElementById("showguess").innerText = hint + extrahint;
-    }
-}
 
 if (localStorage['currentUsername'])
 {
@@ -505,13 +312,280 @@ if (localStorage['currentUsername'])
 }
 
 
-var spellSportApp = angular.module('spellSportApp', []);
+var spellSportApp = angular.module('spellSportApp', ['ngSanitize']);
 
 var SpellingController = spellSportApp.controller('SpellingController', function ($scope) {
     $scope.current = {
-        winningstreak: 0
+        user: "Fred",
+        nickname: "Nick",
+        level: 1,
+        allTimeWinningStreak: 0,
+
+        words: {
+            "good" : {  
+                success:1, 
+                fails: { 
+                    "goood": 1, 
+                    "god":2 
+                } 
+              
+            },
+            "bad": {  
+                success:2, 
+                fails: { 
+                    "baaaad": 1, 
+                    "bd":2 
+                }              
+            },
+        },
+
+        session : {
+            winningstreak : 0,
+            wordsCorrect : 0,          
+            wordsAttempted : 0,
+            distance: 0,
+
+            target:"t2",
+            guess:"",
+            showguess:"<p>BLANK GUESS</p>",
+            attemptsOnCurrentWord : 0
+        }
     };
+
+    $scope.current.session.target = pickNextWord();
+    var current = $scope.current;
+
+    $scope.checkSoFar = function checkSoFar(event) {
+        var myGuess;
+        if (event.which == 13)
+        {
+            $scope.check();
+            return;
+        }
+        else if (event.which == 8) {
+            myGuess = $scope.current.session.guess.substring(0, $scope.current.session.guess.length - 1);
+        }
+        else
+        {
+            var key = event.which;
+            var keyChar = String.fromCharCode((96 <= key && key <= 105)? key-48 : key).toLowerCase();
+            myGuess = $scope.current.session.guess + keyChar;
+        }
+
+         
+        var buffer = "";
+
+        for (var i = 0; i < myGuess.length; i++)
+        {
+            if (myGuess[i] === $scope.current.session.target[i])
+            {
+                buffer = buffer + "<span class='good'>" + myGuess[i] + "</span>";
+            }
+            else
+            {
+                buffer = buffer + "<span class='bad'>" + myGuess[i] + "</span>";                
+            }
+        }
+        $scope.current.session.showguess = buffer;
+    };  
+
+    $scope.check = function check() {
+        if (document.getElementById("gobutton").innerText === "Next")
+        {
+            $scope.next();
+            return;  
+        }
+
+        var guess = $scope.current.session.guess;
+        var target = $scope.current.session.target;
+        if (guess.toUpperCase() === target.toUpperCase())
+        {
+           var description;
+            for (var k = 0; k < keys.length; k++)
+            {
+                if (keys[k].toUpperCase() === guess.toUpperCase())
+                {
+                    description = dictionary[keys[k]];
+                }
+            }
+            description = "&lt;b&gt;" + clj_fuzzy.stemmers.lovins(target) + "&lt;/b&gt; stem of  " +  target + ": " + description;
+
+            if ($scope.current.session.attemptsOnCurrentWord === 0)
+            {
+                $scope.current.session.wordsCorrect = $scope.current.session.wordsCorrect + 1
+                if (typeof localStorage[ username + target] === "undefined")
+                {
+                    localStorage[ username + target] = 1;
+                }
+                else
+                    localStorage[ username + target] = localStorage[username + target] + 1
+            }
+
+            $scope.current.session.winningstreak = $scope.current.session.winningstreak + 1
+
+            if ($scope.current.session.wordsCorrect > 5 && $scope.current.session.wordsAttempted === 10)
+            {
+                window.open('svg/Level1.svg', 'show')
+                setLevel(getLevel() + 1);
+            }
+            else if ($scope.current.session.wordsCorrect > 10 && $scope.current.session.wordsAttempted === 20)
+            {
+                window.open('svg/Level2.svg', 'show')
+                setLevel(getLevel() + 1);
+            }
+            else if ($scope.current.session.wordsCorrect > 15 && $scope.current.session.wordsAttempted === 30)
+            {
+                window.open('svg/Level3.svg', 'show')
+                setLevel(getLevel() + 1);
+            }
+
+            
+            var bestWinningstreak = localStorage["highscore" + $scope.user];
+            if (typeof bestWinningstreak === "undefined")
+            {
+                bestWinningstreak = 0;
+            }
+
+            if ($scope.current.bestWinningstreak < $scope.current.session.winningstreak)
+            {
+                localStorage["highscore" + username] = winningstreak;
+            }
+
+            document.getElementById("entry").style.backgroundColor = "green";
+            document.getElementById("gobutton").innerText = "Next";
+            //var description = dictionary[target];
+            if (typeof description === "undefined")
+            {
+                description = "Well done!";
+            }
+            $scope.current.session.showguess = description;
+        }
+        else
+        {
+            var extrahint =""
+            var dist = clj_fuzzy.metrics.jaccard(guess, target);
+            if ($scope.current.session.attemptsOnCurrentWord > 0 && dist < $scope.current.session.distance)
+            {
+                extrahint = "Getting hotter :-)";
+            }
+            else if ($scope.current.session.attemptsOnCurrentWord > 0) {
+                extrahint = "Getting colder..."
+            }
+            else{            
+                $scope.current.session.distance = dist;
+            }
+
+            $scope.current.session.attemptsOnCurrentWord = $scope.current.session.attemptsOnCurrentWord + 1;
+            $scope.current.session.winningstreak = 0;
+            var hint = "";
+            for (var i = 0; i < target.length; i++)
+            {
+                if (i < guess.length && target[i].toUpperCase() === guess[i].toUpperCase())
+                {
+                    hint = hint + target[i] ;
+                }
+                else {
+                    hint = hint + "_";
+                }
+            }
+
+            var j = guess.length - 1;
+            for (var i = target.level -1 ; i >= 0; i--)
+            {
+                if (target[i].toUpperCase() === guess[j].toUpperCase())
+                {
+                    j = j - 1;
+                }
+                else {
+                    break;
+                }
+            }
+
+            //Help
+
+            $scope.flashTarget();
+
+            if(!clj_fuzzy.metrics.mra_comparison(target,guess).match)
+            {
+               hint = hint + " (listen to the word again carefully - you've not quite got the right sounds.')";   
+            }
+            else {
+               hint = hint + " (it sounds about right)";
+            }
+
+            $scope.current.session.showguess = hint + extrahint;
+        }
+    };
+
+    $scope.crocClicked = function crocClicked() {
+        $scope.sayTarget();
+        $scope.flashTarget();
+        document.getElementById('entry').focus();
+    };
+
+    $scope.sayTarget = function sayTarget() {
+        var utter = new SpeechSynthesisUtterance($scope.current.session.target); 
+        utter.lang = 'en-UK'; 
+        utter.rate = 1;
+     //   debugger;  
+        window.speechSynthesis.speak(utter);
+        document.getElementById('entry').focus();
+    };
+
+    $scope.sayGuess = function sayGuess() {
+        var utter = new SpeechSynthesisUtterance($scope.current.session.guess); 
+        utter.lang = 'en-UK'; 
+        utter.rate = 0.5;
+        window.speechSynthesis.speak(utter);
+        document.getElementById('entry').focus();
+    };
+
+
+    $scope.flashTarget = function flashTarget() {
+        if (document.getElementById("target").className === "fadeOut animated")
+        {
+            document.getElementById("target").className = "fadeOutRight animated";
+        }
+        else
+        {
+            document.getElementById("target").className = "fadeOut animated";            
+        }
+    };
+
+    $scope.next = function next() {
+        $scope.current.session.wordsAttempted = $scope.current.session.wordsAttempted + 1;
+        $scope.current.session.attemptsOnCurrentWord = 0;
+        document.getElementById("gobutton").innerText = "Try!";
+        $scope.current.session.guess = ""; 
+        document.getElementById("entry").style.backgroundColor = "white";
+        $scope.current.session.showguess = "";
+        $scope.current.session.target = pickNextWord();
+
+        $scope.flashTarget();
+        $scope.sayTarget();
+    };
+
+
+    function pickNextWord()
+    {
+        var level = $scope.current.level;
+
+        var target;
+        do {
+        //  target = keys[ keys.length * Math.random() << 0];
+            target = wordList[Math.floor((Math.random() * wordList.length))];
+        } while (target.length > level + 2)
+
+        return target;
+    }
+
 });
+
+var SpellingController = spellSportApp.controller('WordListCtrl', function ($scope) {
+    $scope.words = [ { word:"Hate", fails:2 }, { word:"Fell", fails:5 }];
+});
+
+
 
 describe('SpellingController Tests', function() {
   beforeEach(module('spellSportApp'));
@@ -528,14 +602,12 @@ describe('SpellingController Tests', function() {
      var scope = {};
      var ctrl = $controller('SpellingController', {$scope:scope});
   
-     expect(scope.current.winningstreak).toBe(0);
+     expect(scope.current.session.winningstreak).toBe(0);
   }));
 
 });
 
 });
-
-//}).call(this);
 
 
 (function() {
