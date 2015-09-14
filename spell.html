@@ -19,6 +19,16 @@
         .bad {
             color: red;
         }
+
+        .word_mastered {
+    animation: glow .5s infinite alternate;
+}
+
+@keyframes glow {
+    to {
+        text-shadow: 0 0 10px red;
+    }
+}
     </style>
 
     <link rel="stylesheet" href="css/animate.min.css" />
@@ -26,35 +36,39 @@
 </head>    
 <body ng-controller="SpellingController">
     
-    Name:    <input id="username" ng-model="current.user"       type="text" />
+    Name:    <input id="username" ng-model="current.user"     ng-keyup="selectUser()"  type="text" />
     Nicname: <input id="nickname" ng-model="current.nickname"   type="text" />
     Level:   <input id="level"    ng-model="current.level"      type="text" />
 
    
 <table>
     <tr>
-        <td>
+        <td style="vertical-align:top">
             <h1>SpellSport</h1>
                 <img width="200"
                     ng-click="crocClicked()" 
                     src="img/Crocodile.jpg" />
 
             <h1 id="target" class="fadeOut animated">{{current.session.target}}</h1>
-            <div ng-bind-html="current.session.showguess"></div>
+                    <div ng-bind-html="current.session.wordmasteredbanner"></div>
+        
+                    <div ng-bind-html="current.session.showguess"></div>
 
-            <input id="entry" ng-keydown="checkSoFar($event)" 
+            <input id="entry" ng-keyup="checkSoFar($event)" 
                 type="text" ng-enter="check()" ng-model="current.session.guess" />
             <button id="gobutton" ng-click="check()" >Try!</button>
             <button id="soundbutton" ng-click="sayGuess()" >Speak!</button>
             <button id="skipbutton" ng-click="next()" >Skip</button>
 
-            <h2 id="winningstreak">Winning Streak: {{ current.session.winningstreak }}</h2>
-            <h2 id="bestwinningstreak">Best ever streak: {{ current.winningstreak }}}</h2>
-            
+            <h2 id="winningstreak">Attempts: {{ current.session.attemptsOnCurrentWord }}</h2>
+            <h2>Current Word Stats: {{ current.session.word.success }} successes.</h2>
             </td>
-            <td width="70%" ng-controller="WordListCtrl">
-                <ul ng-repeat="word in words">
-                    <li>{{word.word}}<p> incorrect apptempts: {{word.fails}}</p></li>
+            <td width="70%" >
+
+        <h2>Vocab size: {{current.stats.vocabularySize}}</h2>
+        <h2>Mastered words: {{current.stats.masteredWords}}</h2>
+                <ul ng-repeat="word in current.recentWords track by $index | orderBy:$id:true">
+                    <li>{{word}}</li>
                 </ul>
             </td>
         </tr>
@@ -76,9 +90,26 @@ Could award certificate
 could crossword? could battleships?
 
 */
+
+    var wordList = ["kangaroo",
+                    "tomato",
+                    "flamingo",
+                    "armadillo",
+                    "echo",
+                    "radio",
+                    "cello",
+                    "igloo",
+                    "potato",
+                    "risotto",
+                    "mango",
+                    "volcano",
+                    "cuckoo",
+                    "piano",
+                    "banjo",
+                    "tattoo" ];
         
     //var wordList = [ "Nessisary", "Success", "Urgent", "Excellent", "Dicipline", "Gigantic", "Generous" ];
-    var wordList = ['a','alone','ask','beg','build',
+ /*   var wordList = ['a','alone','ask','beg','build',
 'able','along','assist','began','built',
 'aboard','already','associate','begin','burn',
 'about','also','association','beginning','business',
@@ -278,66 +309,33 @@ could crossword? could battleships?
 'story','these','two','what',
 'street','they','unable','when',
 'struck','thing','uncle','where'];
-
-    /* model */
-   
+   */
     var keys = Object.keys(dictionary);
     
-Storage.prototype.setObject = function(key, value) {
-    this.setItem(key, JSON.stringify(value));
-}
-
-Storage.prototype.getObject = function(key) {
-    var value = this.getItem(key);
-    return value && JSON.parse(value);
-}
-
-function setLevel(level)
-{
-    document.getElementById("level").value = level;
-    localStorage['currentLevel'] = level;
-}
-
-function getLevel()
-{
-    return  parseInt(document.getElementById("level").value);
-}
-
-
-
-if (localStorage['currentUsername'])
-{
-    document.getElementById("username").value = localStorage['currentUsername'];
-    document.getElementById("level").value = localStorage['currentLevel'];
-}
-
-
 var spellSportApp = angular.module('spellSportApp', ['ngSanitize']);
 
+spellSportApp.filter('reverse', function() {
+  return function(items) {
+    return items.slice().reverse();
+  };
+});
+
 var SpellingController = spellSportApp.controller('SpellingController', function ($scope) {
-    $scope.current = {
+    function createDefaultUser() {
+      return {
         user: "Fred",
         nickname: "Nick",
         level: 1,
         allTimeWinningStreak: 0,
 
-        words: {
-            "good" : {  
-                success:1, 
-                fails: { 
-                    "goood": 1, 
-                    "god":2 
-                } 
-              
-            },
-            "bad": {  
-                success:2, 
-                fails: { 
-                    "baaaad": 1, 
-                    "bd":2 
-                }              
-            },
+        stats: {
+            vocabularySize: 0,
+            masteredWords:0,
         },
+
+        recentWords: [],
+
+        words: {},
 
         session : {
             winningstreak : 0,
@@ -345,49 +343,115 @@ var SpellingController = spellSportApp.controller('SpellingController', function
             wordsAttempted : 0,
             distance: 0,
 
-            target:"t2",
+            target:"",
             guess:"",
             showguess:"<p>BLANK GUESS</p>",
             attemptsOnCurrentWord : 0
         }
     };
 
+    }
+    
+    $scope.current = createDefaultUser();
+
+    $scope.current.user = localStorage["lastuser"];
+
+    $scope.resetCurrent = function createDefaultUser() {
+        console.log("Reset.");
+        $scope.current.session.winningstreak = 0;
+        $scope.current.session.guess = "";
+    };
+
+    $scope.selectUser = function() {
+      if ($scope.current.user)
+      {
+          var user = $scope.current.user;
+          var USER = user.toUpperCase();
+          localStorage["lastuser"] = USER;
+          console.log("loaded " + USER);
+          var result = localStorage[USER];
+          if (result)
+          {
+              $scope.current = JSON.parse(result);
+          }
+          else {
+              $scope.current = createDefaultUser();
+              $scope.current.user = user;
+          }
+
+          $scope.resetCurrent();
+      }
+    };
+
+    $scope.selectUser();
+
+
     $scope.current.session.target = pickNextWord();
     var current = $scope.current;
 
     $scope.checkSoFar = function checkSoFar(event) {
-        var myGuess;
-        if (event.which == 13)
+        
+        if (event && event.which == 13)
         {
+            console.log("enter pressed");
             $scope.check();
             return;
         }
-        else if (event.which == 8) {
-            myGuess = $scope.current.session.guess.substring(0, $scope.current.session.guess.length - 1);
-        }
-        else
-        {
-            var key = event.which;
-            var keyChar = String.fromCharCode((96 <= key && key <= 105)? key-48 : key).toLowerCase();
-            myGuess = $scope.current.session.guess + keyChar;
-        }
+        var myGuess = $scope.current.session.guess;
 
-         
+        var colorLetters = $scope.current.session.attemptsOnCurrentWord !== 0;
+        
         var buffer = "";
 
         for (var i = 0; i < myGuess.length; i++)
         {
-            if (myGuess[i] === $scope.current.session.target[i])
+            var clazz;
+            if (!colorLetters)
             {
-                buffer = buffer + "<span class='good'>" + myGuess[i] + "</span>";
+                clazz = "";
+            }
+            else if (myGuess[i] === $scope.current.session.target[i])
+            {
+                clazz = "good";
             }
             else
             {
-                buffer = buffer + "<span class='bad'>" + myGuess[i] + "</span>";                
+                clazz = "bad";
             }
+            buffer = buffer + "<span class='"+ clazz +"'>" + myGuess[i] + "</span>";                
         }
         $scope.current.session.showguess = buffer;
     };  
+
+    $scope.recalcStats = function() {
+        $scope.current.stats.vocabularySize = Object.keys($scope.current.words).length;
+
+        var masteredWords = 0;
+        var keys = Object.keys($scope.current.words);
+        for (var i = 0; i < keys.length; i++)
+        {
+            var word = $scope.current.words[keys[i]];
+            if (word.success > word.failCount) {
+                masteredWords++;
+            }
+        }
+
+        if (masteredWords > $scope.current.stats.masteredWords)
+        {
+            //new mastered word!
+            $scope.current.session.wordmasteredbanner= "<h2 class='word_mastered'>New Word Mastered: " + $scope.current.session.target + "</h2>"
+        
+        }
+        else {
+            $scope.current.session.wordmasteredbanner= "";  
+        }
+
+        //sum of words where first time correct > wrong times.
+        $scope.current.stats.masteredWords = masteredWords;
+
+        localStorage[$scope.current.user.toUpperCase()] = JSON.stringify($scope.current);
+    };
+
 
     $scope.check = function check() {
         if (document.getElementById("gobutton").innerText === "Next")
@@ -400,6 +464,7 @@ var SpellingController = spellSportApp.controller('SpellingController', function
         var target = $scope.current.session.target;
         if (guess.toUpperCase() === target.toUpperCase())
         {
+           
            var description;
             for (var k = 0; k < keys.length; k++)
             {
@@ -408,17 +473,34 @@ var SpellingController = spellSportApp.controller('SpellingController', function
                     description = dictionary[keys[k]];
                 }
             }
-            description = "&lt;b&gt;" + clj_fuzzy.stemmers.lovins(target) + "&lt;/b&gt; stem of  " +  target + ": " + description;
+
+            var stem = clj_fuzzy.stemmers.lovins(target);
+            if (!(stem === target) )
+            {
+                description = "<b>" + stem + "</b> stem of  " +  target + ": " + description;
+            }
+
+            var wordStats = $scope.current.words[target];
+            if (typeof wordStats === "undefined")
+            {
+                wordStats = {                  
+                      success: 0,
+                      failCount: 0,
+                      fails: {} 
+                }
+                wordStats.word = target;
+                $scope.current.words[target] = wordStats;
+            }
+
+            if ($scope.current.session.attemptsOnCurrentWord === 0)
+            {
+                wordStats.success = wordStats.success + 1;
+            }
+            $scope.current.session.wordsAttempted = $scope.current.session.wordsAttempted + 1;
 
             if ($scope.current.session.attemptsOnCurrentWord === 0)
             {
                 $scope.current.session.wordsCorrect = $scope.current.session.wordsCorrect + 1
-                if (typeof localStorage[ username + target] === "undefined")
-                {
-                    localStorage[ username + target] = 1;
-                }
-                else
-                    localStorage[ username + target] = localStorage[username + target] + 1
             }
 
             $scope.current.session.winningstreak = $scope.current.session.winningstreak + 1
@@ -426,31 +508,22 @@ var SpellingController = spellSportApp.controller('SpellingController', function
             if ($scope.current.session.wordsCorrect > 5 && $scope.current.session.wordsAttempted === 10)
             {
                 window.open('svg/Level1.svg', 'show')
-                setLevel(getLevel() + 1);
+                $scope.current.level = $scope.current.level + 1;
+                $scope.next();
             }
             else if ($scope.current.session.wordsCorrect > 10 && $scope.current.session.wordsAttempted === 20)
             {
                 window.open('svg/Level2.svg', 'show')
-                setLevel(getLevel() + 1);
+                $scope.current.level = $scope.current.level + 1;
+                $scope.next();
             }
             else if ($scope.current.session.wordsCorrect > 15 && $scope.current.session.wordsAttempted === 30)
             {
                 window.open('svg/Level3.svg', 'show')
-                setLevel(getLevel() + 1);
+                $scope.current.level = $scope.current.level + 1;
+                $scope.next();
             }
-
             
-            var bestWinningstreak = localStorage["highscore" + $scope.user];
-            if (typeof bestWinningstreak === "undefined")
-            {
-                bestWinningstreak = 0;
-            }
-
-            if ($scope.current.bestWinningstreak < $scope.current.session.winningstreak)
-            {
-                localStorage["highscore" + username] = winningstreak;
-            }
-
             document.getElementById("entry").style.backgroundColor = "green";
             document.getElementById("gobutton").innerText = "Next";
             //var description = dictionary[target];
@@ -459,9 +532,33 @@ var SpellingController = spellSportApp.controller('SpellingController', function
                 description = "Well done!";
             }
             $scope.current.session.showguess = description;
+            $scope.recalcStats();
         }
         else
         {
+            var wordStats = $scope.current.words[target];
+            if (typeof wordStats === "undefined")
+            {
+                wordStats = {                  
+                     success: 0,
+                     failCount: 0,
+                     fails: {} 
+                }
+                wordStats.word = target;
+                $scope.current.words[target] = wordStats;
+            }
+            
+            
+            if (!wordStats.fails.hasOwnProperty(guess))
+            {
+                wordStats.fails[guess] = 0;
+            }
+            wordStats.failCount = wordStats.failCount + 1;
+            wordStats.fails[guess] = wordStats.fails[guess] + 1;
+
+
+
+
             var extrahint =""
             var dist = clj_fuzzy.metrics.jaccard(guess, target);
             if ($scope.current.session.attemptsOnCurrentWord > 0 && dist < $scope.current.session.distance)
@@ -478,7 +575,8 @@ var SpellingController = spellSportApp.controller('SpellingController', function
             $scope.current.session.attemptsOnCurrentWord = $scope.current.session.attemptsOnCurrentWord + 1;
             $scope.current.session.winningstreak = 0;
             var hint = "";
-            for (var i = 0; i < target.length; i++)
+            $scope.checkSoFar();
+            /*for (var i = 0; i < target.length; i++)
             {
                 if (i < guess.length && target[i].toUpperCase() === guess[i].toUpperCase())
                 {
@@ -499,13 +597,17 @@ var SpellingController = spellSportApp.controller('SpellingController', function
                 else {
                     break;
                 }
-            }
+            }*/
 
             //Help
-
-            $scope.flashTarget();
-
-            if(!clj_fuzzy.metrics.mra_comparison(target,guess).match)
+            if ($scope.current.session.attemptsOnCurrentWord > 1)
+            {
+                $scope.flashTarget();
+            }
+            $scope.say($scope.current.session.guess + ", target word is: " + $scope.current.session.target);
+            
+            var fuzz = clj_fuzzy.metrics.mra_comparison(target,guess);
+            if(!fuzz || !fuzz.match)
             {
                hint = hint + " (listen to the word again carefully - you've not quite got the right sounds.')";   
             }
@@ -513,21 +615,48 @@ var SpellingController = spellSportApp.controller('SpellingController', function
                hint = hint + " (it sounds about right)";
             }
 
-            $scope.current.session.showguess = hint + extrahint;
+            $scope.current.session.showguess = $scope.current.session.showguess + hint + extrahint;
         }
     };
 
     $scope.crocClicked = function crocClicked() {
         $scope.sayTarget();
-        $scope.flashTarget();
+
+        if ($scope.current.session.attemptsOnCurrentWord > 4)
+        {
+            $scope.flashTarget();
+        }
         document.getElementById('entry').focus();
     };
+
+    $scope.say = function say(message) {
+        var utter = new SpeechSynthesisUtterance(message); 
+        utter.lang = 'en-UK'; 
+        utter.rate = 1;
+
+        var voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0)
+        {        
+            //utter.voice = voices[Math.floor((Math.random() * voices.length))]
+            utter.voice = voices.filter(function(voice) { return voice.name == 'Google UK English Male'; })[0];
+        }
+
+        window.speechSynthesis.speak(utter);
+    }
 
     $scope.sayTarget = function sayTarget() {
         var utter = new SpeechSynthesisUtterance($scope.current.session.target); 
         utter.lang = 'en-UK'; 
         utter.rate = 1;
+
+        var voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0)
+        {        
+            utter.voice = voices[Math.floor((Math.random() * voices.length))]
+            //utter.voice = voices.filter(function(voice) { return voice.name == 'Google UK English Male'; })[0];
+        }
      //   debugger;  
+
         window.speechSynthesis.speak(utter);
         document.getElementById('entry').focus();
     };
@@ -535,7 +664,7 @@ var SpellingController = spellSportApp.controller('SpellingController', function
     $scope.sayGuess = function sayGuess() {
         var utter = new SpeechSynthesisUtterance($scope.current.session.guess); 
         utter.lang = 'en-UK'; 
-        utter.rate = 0.5;
+        utter.rate = 1;
         window.speechSynthesis.speak(utter);
         document.getElementById('entry').focus();
     };
@@ -553,39 +682,79 @@ var SpellingController = spellSportApp.controller('SpellingController', function
     };
 
     $scope.next = function next() {
-        $scope.current.session.wordsAttempted = $scope.current.session.wordsAttempted + 1;
+
+
+
+        //Reset
         $scope.current.session.attemptsOnCurrentWord = 0;
         document.getElementById("gobutton").innerText = "Try!";
         $scope.current.session.guess = ""; 
         document.getElementById("entry").style.backgroundColor = "white";
         $scope.current.session.showguess = "";
-        $scope.current.session.target = pickNextWord();
+        var target = pickNextWord();
+        $scope.current.session.target = target;
 
-        $scope.flashTarget();
+        var wordStats = $scope.current.words[target];
+        if (typeof wordStats === "undefined")
+        {
+            wordStats = {                  
+                 success: 0,
+                 failCount: 0,
+                 fails: {} 
+            }
+            wordStats.word = target;
+            $scope.current.words[target] = wordStats;
+
+        }
+
+        console.log(wordStats);
+        $scope.current.session.word = wordStats;
         $scope.sayTarget();
     };
 
 
     function pickNextWord()
     {
+        $scope.current.recentWords.push($scope.current.session.target);
+        if ($scope.current.recentWords.length > 10)
+        {
+            $scope.current.recentWords.shift();
+        }
+
         var level = $scope.current.level;
+
+        if (!$scope.current.recentWords) {
+            $scope.current.recentWords = [];
+        }
 
         var target;
         do {
         //  target = keys[ keys.length * Math.random() << 0];
             target = wordList[Math.floor((Math.random() * wordList.length))];
-        } while (target.length > level + 2)
+        } while ($scope.current.recentWords.indexOf(target) != -1)
+
+        
 
         return target;
     }
-
 });
 
 var SpellingController = spellSportApp.controller('WordListCtrl', function ($scope) {
     $scope.words = [ { word:"Hate", fails:2 }, { word:"Fell", fails:5 }];
 });
 
+/**
+Requirements.
 
+Don't show the word your trying to spell.
+
+Don't repeat words that they got right.
+
+Use different voices to give people different angles on pronunciation.
+
+
+
+*/
 
 describe('SpellingController Tests', function() {
   beforeEach(module('spellSportApp'));
@@ -602,7 +771,7 @@ describe('SpellingController Tests', function() {
      var scope = {};
      var ctrl = $controller('SpellingController', {$scope:scope});
   
-     expect(scope.current.session.winningstreak).toBe(0);
+     expect(scope.current.session.guess).toBe("");
   }));
 
 });
