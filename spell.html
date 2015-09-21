@@ -1,16 +1,30 @@
 <!DOCTYPE html>
-<html lang="en" ng-app="spellSportApp">
+<html lang="en" >
 <head>
   <meta charset="utf-8">
     <title>SpellSport</title>
+
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+
     <script src="js/dictionary.js"></script>
     <script src="js/jasmine.js"></script>
     <script src="js/jasmine-html.js"></script>
-    <script src="js/angular.min.js"></script>
-    <script src="js/angular-sanitize.min.js"></script>
-    <script src="js/angular-mocks.js"></script>
-    <script src="js/clj-fuzzy.js" ></script>
+    <script src="bower_components/angular/angular.js"></script>
+    <script src="bower_components/angular-sanitize/angular-sanitize.min.js"></script>
+    <script src="bower_components/angular-aria/angular-aria.js"></script>
+    <script src="bower_components/angular-animate/angular-animate.js"></script>
+    <script src="bower_components/angular-material/angular-material.js"></script>     
 
+    <link rel="stylesheet" href="bower_components/angular-material/angular-material.css">
+
+    <!-- for testing -->
+    <script src="bower_components/angular-mocks/angular-mocks.js"></script>
+    <script src="js/clj-fuzzy.js"></script>
+    <!--script src="js/blanket.min.js"></script>
+    <script src="js/jasmine-blanket.js"></script-->
+    
+    <!-- styles -->
+    <link rel="stylesheet" href="bower_components/angular-material/angular-material.min.css" type="text/css">
     <style>
         .good {
             color: green;
@@ -28,23 +42,66 @@
     to {
         text-shadow: 0 0 10px red;
     }
+
+
+    .tabsdemoDynamicHeight md-content {
+  background-color: transparent !important; }
+  .tabsdemoDynamicHeight md-content md-tabs {
+    background: #f6f6f6;
+    border: 1px solid #e1e1e1; }
+    .tabsdemoDynamicHeight md-content md-tabs md-tabs-wrapper {
+      background: white; }
+  .tabsdemoDynamicHeight md-content h1:first-child {
+    margin-top: 0; }
+
 }
     </style>
 
     <link rel="stylesheet" href="css/animate.min.css" />
     <link rel="stylesheet" href="css/jasmine.css" />
 </head>    
-<body ng-controller="SpellingController">
-    
-    Name:    <input id="username" ng-model="current.user"     ng-keyup="selectUser()"  type="text" />
-    Nicname: <input id="nickname" ng-model="current.nickname"   type="text" />
-    Level:   <input id="level"    ng-model="current.level"      type="text" />
-
+<body ng-app="spellSportApp" 
+    ng-controller="SpellingController" layout="column">
    
-<table>
-    <tr>
+  <md-content class="md-padding">
+    <md-tabs md-dynamic-height md-border-bottom md-selected="selectedTabIndex">
+    <md-tab label="Settings" id="tabSettings">
+        <md-content class="md-padding">
+          <h1 class="md-display-2">Settings</h1>
+            <p>
+             <div layout layout-sm="column">
+                    <md-input-container flex>
+                      <label>First name</label>
+                      <input ng-model="current.user">
+                    </md-input-container>
+                     <md-input-container flex>
+                      <label>Nickname</label>
+                      <input ng-model="current.nickname">
+                    </md-input-container>
+            </div>
+            <div layout>
+                  <div flex="10" layout layout-align="center center">
+                    <span class="md-body-1">Level</span>
+                  </div>
+                 <md-slider flex min="1" max="10"
+                       ng-model="current.level" 
+                       aria-label="red"
+                       class>
+                  </md-slider>
+                  <div flex="20" layout layout-align="center center">
+                    <input flex type="number" ng-model="current.level" aria-label="red" aria-controls="red-slider">
+                  </div>
+                </div>
+            </p>
+        </md-content>
+      </md-tab>
+      <md-tab label="Play" id="tabPlay">
+        <md-content class="md-padding">
+          <h1 class="md-display-2">Play</h1>
+          <p>
+        <table>
+        <tr>
         <td style="vertical-align:top">
-            <h1>SpellSport</h1>
                 <img width="200"
                     ng-click="crocClicked()" 
                     src="img/Crocodile.jpg" />
@@ -54,25 +111,114 @@
         
                     <div ng-bind-html="current.session.showguess"></div>
 
-            <input id="entry" ng-keyup="checkSoFar($event)" 
-                type="text" ng-enter="check()" ng-model="current.session.guess" />
-            <button id="gobutton" ng-click="check()" >Try!</button>
-            <button id="soundbutton" ng-click="sayGuess()" >Speak!</button>
-            <button id="skipbutton" ng-click="next()" >Skip</button>
+             <md-input-container flex>
+                      <label>Guess:</label>
+                      <input id="entry" 
+                                  ng-keyup="checkSoFar($event)" 
+                            ng-enter="check()" 
+                            ng-model="current.session.guess"
+            >
+                    </md-input-container>
+
+
+            <md-button id="gobutton"  ng-click="check()" class="md-raised">Try!</md-button>
+            <md-button id="soundbutton"  ng-click="sayGuess()" class="md-raised">Speak!</md-button>
+            <md-button id="skipbutton"  ng-click="next()" class="md-raised">Next</md-button>
+          
 
             <h2 id="winningstreak">Attempts: {{ current.session.attemptsOnCurrentWord }}</h2>
             <h2>Current Word Stats: {{ current.session.word.success }} successes.</h2>
             </td>
-            <td width="70%" >
+            <td style="vertical-align:top" width="70%" >
 
         <h2>Vocab size: {{current.stats.vocabularySize}}</h2>
         <h2>Mastered words: {{current.stats.masteredWords}}</h2>
-                <ul ng-repeat="word in current.recentWords track by $index | orderBy:$id:true">
+                <!--ul ng-repeat="word in current.recentWords track by $index | orderBy:$id:true">
                     <li>{{word}}</li>
-                </ul>
+                </ul-->
+
+                <!--md-chips
+readonly="true"
+                 ng-model="current.recentWords" readonly="ctrl.readonly">
+      <md-chip-template>
+        <strong>{{$chip}}</strong>
+        <em></em>
+      </md-chip-template>
+    </md-chips-->
             </td>
         </tr>
-    </table>
+    </table>          
+          </p>
+        </md-content>
+      </md-tab>
+      <md-tab label="Challenge" id="tabChallenge" md-on-select="startTest(tab)" md-on-deselect="stopTest(tab)"><!-- md-on-select="onTabSelected(tab)"  ng-disabled="tab.disabled" -->
+         <md-content class="md-padding">
+          <h1 class="md-display-2">Challenge</h1>
+          <p>
+<table>
+    <tr>
+        <td style="vertical-align:top">
+            
+            <md-button id="gobutton"  
+                ng-click="startTest()" 
+                class="md-raised">Start Challenge {{current.level}}</md-button>
+
+<p>
+            Success: {{current.test.correct}} out of {{current.test.total}}.
+            </p><p>
+            Progress: {{current.test.index}} / {{current.test.total}}
+   </p>         
+            
+            <img width="200"
+                    ng-click="crocClicked()" 
+                    src="img/Crocodile.jpg" />
+
+
+            <h1 id="target" class="fadeOut animated">{{current.session.target}}</h1>
+            <div ng-bind-html="current.session.wordmasteredbanner"></div>        
+            <div ng-bind-html="current.session.showguess"></div>
+
+             <md-input-container flex>
+              <label>Guess:</label>
+              <input id="entry" 
+                          ng-keyup="checkSoFar($event)" 
+                    ng-enter="check()" 
+                    ng-model="current.session.guess">
+            </md-input-container>
+
+
+            <md-button id="gobutton"  ng-click="check()" class="md-raised">Try!</md-button>
+            <md-button id="soundbutton"  ng-click="sayGuess()" class="md-raised">Speak!</md-button>
+            <md-button id="skipbutton"  ng-click="next()" class="md-raised">Next</md-button>
+          
+            </td>
+            <td style="vertical-align:top" width="70%" >
+
+                <!--ul ng-repeat="word in current.recentWords track by $index | orderBy:$id:true">
+                    <li>{{word}}</li>
+                </ul-->
+
+            </td>
+        </tr>
+    </table>          
+          </p>
+        </md-content>
+      </md-tab>
+      <md-tab label="Stories">
+        <md-content class="md-padding">
+          <h1 class="md-display-2">Stories</h1>
+          <p>She sells seashells by the seashore.</p><p>
+The shells she sells are surely seashells.</p><p>
+<p>So if she sells shells on the seashore,
+I'm sure she sells seashore shells.</p>
+        </md-content>
+      </md-tab>
+     
+    </md-tabs>
+
+
+   
+  </md-content>
 
     <script>
     "use strict";
@@ -88,8 +234,28 @@ Could highlight sounds (and alternative soundings).
 Could award certificate 
 
 could crossword? could battleships?
+tests
 
 */
+
+    var tests = [
+                   ["kangaroo",
+                    "tomato",
+                    "flamingo",
+                    "armadillo",
+                    "echo",
+                    "radio",
+                    "cello",
+                    "igloo",
+                    "potato",
+                    "risotto",
+                    "mango",
+                    "volcano",
+                    "cuckoo",
+                    "piano",
+                    "banjo",
+                    "tattoo" ]
+    ];
 
     var wordList = ["kangaroo",
                     "tomato",
@@ -312,7 +478,7 @@ could crossword? could battleships?
    */
     var keys = Object.keys(dictionary);
     
-var spellSportApp = angular.module('spellSportApp', ['ngSanitize']);
+var spellSportApp = angular.module('spellSportApp', ['ngSanitize','ngMaterial', 'ngAnimate', 'ngAria']);
 
 spellSportApp.filter('reverse', function() {
   return function(items) {
@@ -330,7 +496,7 @@ var SpellingController = spellSportApp.controller('SpellingController', function
 
         stats: {
             vocabularySize: 0,
-            masteredWords:0,
+            masteredWords:0
         },
 
         recentWords: [],
@@ -358,6 +524,7 @@ var SpellingController = spellSportApp.controller('SpellingController', function
 
     $scope.resetCurrent = function createDefaultUser() {
         console.log("Reset.");
+        $scope.current.test = undefined;
         $scope.current.session.winningstreak = 0;
         $scope.current.session.guess = "";
     };
@@ -387,7 +554,6 @@ var SpellingController = spellSportApp.controller('SpellingController', function
 
 
     $scope.current.session.target = pickNextWord();
-    var current = $scope.current;
 
     $scope.checkSoFar = function checkSoFar(event) {
         
@@ -454,7 +620,8 @@ var SpellingController = spellSportApp.controller('SpellingController', function
 
 
     $scope.check = function check() {
-        if (document.getElementById("gobutton").innerText === "Next")
+
+        if ($scope.current.session.correct)
         {
             $scope.next();
             return;  
@@ -465,6 +632,16 @@ var SpellingController = spellSportApp.controller('SpellingController', function
         if (guess.toUpperCase() === target.toUpperCase())
         {
            
+            if ($scope.current.test)
+            {
+                if ($scope.current.session.attemptsOnCurrentWord === 0)
+                {
+                    $scope.current.test.correct = $scope.current.test.correct + 1;            
+                }
+                $scope.current.test.index = $scope.current.test.index + 1;
+            }
+
+           $scope.current.session.correct = true;
            var description;
             for (var k = 0; k < keys.length; k++)
             {
@@ -525,7 +702,7 @@ var SpellingController = spellSportApp.controller('SpellingController', function
             }
             
             document.getElementById("entry").style.backgroundColor = "green";
-            document.getElementById("gobutton").innerText = "Next";
+            //document.getElementById("gobutton").innerText = "Next";
             //var description = dictionary[target];
             if (typeof description === "undefined")
             {
@@ -574,31 +751,8 @@ var SpellingController = spellSportApp.controller('SpellingController', function
 
             $scope.current.session.attemptsOnCurrentWord = $scope.current.session.attemptsOnCurrentWord + 1;
             $scope.current.session.winningstreak = 0;
-            var hint = "";
             $scope.checkSoFar();
-            /*for (var i = 0; i < target.length; i++)
-            {
-                if (i < guess.length && target[i].toUpperCase() === guess[i].toUpperCase())
-                {
-                    hint = hint + target[i] ;
-                }
-                else {
-                    hint = hint + "_";
-                }
-            }
-
-            var j = guess.length - 1;
-            for (var i = target.level -1 ; i >= 0; i--)
-            {
-                if (target[i].toUpperCase() === guess[j].toUpperCase())
-                {
-                    j = j - 1;
-                }
-                else {
-                    break;
-                }
-            }*/
-
+          
             //Help
             if ($scope.current.session.attemptsOnCurrentWord > 1)
             {
@@ -606,13 +760,14 @@ var SpellingController = spellSportApp.controller('SpellingController', function
             }
             $scope.say($scope.current.session.guess + ", target word is: " + $scope.current.session.target);
             
+            var hint;
             var fuzz = clj_fuzzy.metrics.mra_comparison(target,guess);
             if(!fuzz || !fuzz.match)
             {
-               hint = hint + " (listen to the word again carefully - you've not quite got the right sounds.')";   
+               hint = " (listen carefully...')";   
             }
             else {
-               hint = hint + " (it sounds about right)";
+               hint = " (sounds about right)";
             }
 
             $scope.current.session.showguess = $scope.current.session.showguess + hint + extrahint;
@@ -681,8 +836,54 @@ var SpellingController = spellSportApp.controller('SpellingController', function
         }
     };
 
-    $scope.next = function next() {
+    $scope.startTest = function startTest() {
+    
+        console.log($scope.current.level);
+        var total = tests[$scope.current.level - 1].length;
+        $scope.current.test = {
+            index: 1,
+            correct: 0,
+        }
+        $scope.current.test.total = total;
+        $scope.next();
+    };
+    $scope.stopTest = function stopTest() {
+        $scope.current.inTest = false;
+        $scope.current.test = undefined;        
+    };
+/*
+    platitudes = [
+     'out for a duck!',
+     'a hole in one?',
+     'in need of practice.',
+     'ok, could be worse!',
+     'a good start',
+     'ok',
+     'a solid foundation',
+     'pretty good.',
+     'cracking',
+     'outstanding',
+     'awesome.',
+     'unprecidented'
+    ];*/
 
+    $scope.next = function next() 
+    {
+        if ($scope.inTest)
+        {
+            $scope.current.test.index = $scope.current.test.index + 1;  
+            var total = tests[$scope.current.level].length;
+
+            if ($scope.current.test.index >= total)
+            {
+//TODO: which were not quite perfect. ==> how to make them right.
+                
+                //sucess or failure.
+               // alert($scope.current.test.correct " out of " + total + " is " + platitudes[$scope.current.test.correct]);
+            }
+        }
+
+        $scope.current.session.correct = false;
 
 
         //Reset
@@ -727,21 +928,26 @@ var SpellingController = spellSportApp.controller('SpellingController', function
             $scope.current.recentWords = [];
         }
 
-        var target;
-        do {
-        //  target = keys[ keys.length * Math.random() << 0];
-            target = wordList[Math.floor((Math.random() * wordList.length))];
-        } while ($scope.current.recentWords.indexOf(target) != -1)
-
+        if ($scope.current.test)
+        {
+            target = tests[$scope.current.level - 1][$scope.current.test.index];
+        }
+        else {//pick a random one
+            var target;
+            do {
+            //  target = keys[ keys.length * Math.random() << 0];
+                target = wordList[Math.floor((Math.random() * wordList.length))];
+            } while ($scope.current.recentWords.indexOf(target) != -1)
+        }
         
 
         return target;
     }
 });
 
-var SpellingController = spellSportApp.controller('WordListCtrl', function ($scope) {
-    $scope.words = [ { word:"Hate", fails:2 }, { word:"Fell", fails:5 }];
-});
+//var SpellingController = spellSportApp.controller('WordListCtrl', function ($scope) {
+//    $scope.words = [ { word:"Hate", fails:2 }, { word:"Fell", fails:5 }];
+//});
 
 /**
 Requirements.
@@ -756,28 +962,78 @@ Use different voices to give people different angles on pronunciation.
 
 */
 
-describe('SpellingController Tests', function() {
+describe('SpellSport Tests', function() {
   beforeEach(module('spellSportApp'));
 
-  describe('SpellingController', function(){
-    var scope, ctrl, $httpBackend;
+  describe('Playing', function(){
+    var scope, ctrl;
 
     beforeEach(inject(function($rootScope, $controller) {
       scope = $rootScope.$new();
       ctrl = $controller('SpellingController', {$scope: scope});
     }));
 
-    it('should create "current" model with 0 winningstreak', inject(function($controller) {
+    it('should create "current" model with 0 winning streak', inject(function($controller) {
+     
      var scope = {};
-     var ctrl = $controller('SpellingController', {$scope:scope});
+     $controller('SpellingController', {$scope:scope});
   
      expect(scope.current.session.guess).toBe("");
   }));
 
-});
+
+
 
 });
+    describe('Setting screen', function() {
+        it('should let me pick from a list of known users', function() {});
+        it('should remember my nickname, level and stats from last time.', function() {});
+    });
 
+    describe('Challenge screen', function() {
+        var scope, ctrl;
+
+        beforeEach(inject(function($rootScope, $controller) {
+          scope = $rootScope.$new();
+          ctrl = $controller('SpellingController', {$scope: scope});
+        }));
+
+        it('should start afresh when I enter the tab.', function() {
+            scope.stopTest();
+            expect(scope.current.test).toBeUndefined();
+         
+            scope.startTest();
+            expect(scope.current.test).toEqual(jasmine.objectContaining({ 
+                correct : 0,
+                index : 1, 
+            }));
+
+            scope.stopTest();
+            expect(scope.current.test).toBeUndefined();
+        });
+
+        it('should start on the level I am currently on.', function() {
+            scope.startTest();
+            expect(scope.current.level).toBe(1);
+
+        });
+        it('should ask the first question when I press start', function() {
+            scope.startTest();
+            expect(scope.current.target).
+            expect(scope.current.test).toEqual(jasmine.objectContaining({ 
+                correct : 0,
+                index : 1, 
+            }));
+        });
+        it('should say the target word when I click on the croc.', function(){}); 
+        it('should say my word when I click on speak.', function(){}); 
+        it('should tell me if Ive got it right if I spell it right', function(){}); 
+        it('should tell me where its not right if I spell it differently', function(){}); 
+        it('should not repeat the same word in a challenge', function(){}); 
+        
+    });
+
+});
 
 (function() {
   var jasmineEnv = jasmine.getEnv();
@@ -807,9 +1063,10 @@ describe('SpellingController Tests', function() {
 
 
     </script>
-    <span class="version"></span>
-    <script>
+  <span class="version"></span>
+                 <script>
   (document.querySelector(".version") || {}).innerHTML = (typeof jasmine !== "undefined") ? jasmine.version : "";
 </script>
+
     </body>
 </html>
