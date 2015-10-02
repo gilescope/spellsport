@@ -30,31 +30,46 @@
             color: green;
         }
 
+        .incorrectCase {
+            color: orange;
+        }
+
         .bad {
             color: red;
         }
 
         .word_mastered {
-    animation: glow .5s infinite alternate;
-}
+            animation: glow .5s infinite alternate;
+        }
 
-@keyframes glow {
-    to {
-        text-shadow: 0 0 10px red;
-    }
+        .storyfinished {
+            animation: storyglow .5s infinite alternate;
+        }
 
+        @keyframes storyglow {
+            to {
+                text-shadow: 0 0 10px green;
+            }
+        }
 
-    .tabsdemoDynamicHeight md-content {
-  background-color: transparent !important; }
-  .tabsdemoDynamicHeight md-content md-tabs {
-    background: #f6f6f6;
-    border: 1px solid #e1e1e1; }
-    .tabsdemoDynamicHeight md-content md-tabs md-tabs-wrapper {
-      background: white; }
-  .tabsdemoDynamicHeight md-content h1:first-child {
-    margin-top: 0; }
+        @keyframes glow {
+            to {
+                text-shadow: 0 0 10px red;
+            }
+        }
 
-}
+        .tabsdemoDynamicHeight md-content {
+          background-color: transparent !important; }
+        
+        .tabsdemoDynamicHeight md-content md-tabs {
+            background: #f6f6f6;
+            border: 1px solid #e1e1e1; }
+        
+        .tabsdemoDynamicHeight md-content md-tabs md-tabs-wrapper {
+              background: white; }
+        
+        .tabsdemoDynamicHeight md-content h1:first-child {
+            margin-top: 0; }
     </style>
 
     <link rel="stylesheet" href="css/animate.min.css" />
@@ -72,7 +87,7 @@
              <div layout layout-sm="column">
                     <md-input-container flex>
                       <label>First name</label>
-                      <input ng-model="current.user">
+                      <input ng-model="current.user" ng-keyup="selectUser();">
                     </md-input-container>
                      <md-input-container flex>
                       <label>Nickname</label>
@@ -157,22 +172,17 @@ readonly="true"
           <p>
 <table>
     <tr>
-        <td style="vertical-align:top">
-            
+        <td style="vertical-align:top">            
             <md-button id="gobutton"  
                 ng-click="startTest()" 
                 class="md-raised">Start Challenge {{current.level}}</md-button>
 
-<p>
-            Success: {{current.test.correct}} out of {{current.test.total}}.
-            </p><p>
-            Progress: {{current.test.index}} / {{current.test.total}}
-   </p>         
+            <p>Success: {{current.test.correct}} out of {{current.test.total}}.</p>
+            <p>Progress: {{current.test.index}} / {{current.test.total}}</p>         
             
             <img width="200"
                     ng-click="crocClicked()" 
                     src="img/Crocodile.jpg" />
-
 
             <h1 id="target" class="fadeOut animated">{{current.session.target}}</h1>
             <div ng-bind-html="current.session.wordmasteredbanner"></div>        
@@ -207,17 +217,25 @@ readonly="true"
       <md-tab label="Stories">
         <md-content class="md-padding">
           <h1 class="md-display-2">Stories</h1>
-          <p>She sells seashells by the seashore.</p><p>
-The shells she sells are surely seashells.</p><p>
-<p>So if she sells shells on the seashore,
-I'm sure she sells seashore shells.</p>
+            <md-button  
+                ng-click="startStory()" 
+                class="md-raised">Start Story</md-button>
+    
+    <div ng-bind-html="current.session.showguess" style="height:200px;"></div>
+
+             <md-input-container flex>
+              <label>Write the Story:</label>
+               
+
+               <textarea  
+                    ng-keyup="checkSoFarStory($event)" 
+               ng-model="current.session.guess"  
+               
+               ></textarea>
+            </md-input-container>                         
         </md-content>
       </md-tab>
-     
     </md-tabs>
-
-
-   
   </md-content>
 
     <script>
@@ -237,6 +255,12 @@ could crossword? could battleships?
 tests
 
 */
+    var stories = [
+        "Doctor, doctor, I feel like a pair of curtains. Pull yourself together!",
+        "You are my sunshine, my only sunshine. You make me happy when skys are gray. You'll never know how much I love you. Please don't take my sunshine away.",
+        "Mary had a little lamb, it's fleece was white as snow, and everywhere that Mary went, her lamb was sure to go.",
+        "She sells seashells by the seashore. The shells she sells are surely seashells. So if she sells shells on the seashore, I'm sure she sells seashore shells.",
+    ];
 
     var tests = [
                    ["kangaroo",
@@ -254,25 +278,44 @@ tests
                     "cuckoo",
                     "piano",
                     "banjo",
-                    "tattoo" ]
+                    "tattoo" ],
+                    [
+                    "baby",
+                    "birthday",
+                    "happy",
+                    "why",
+                    "eyes",
+                    "swimming",
+                    "word",
+                    "work",
+                    "world",
+                    "white",
+                    "whole",
+                    "window",
+                    "money",
+                    "lady",
+                    "own",
+                    "your",
+                    
+                    ],
     ];
 
-    var wordList = ["kangaroo",
-                    "tomato",
-                    "flamingo",
-                    "armadillo",
-                    "echo",
-                    "radio",
-                    "cello",
-                    "igloo",
-                    "potato",
-                    "risotto",
-                    "mango",
-                    "volcano",
-                    "cuckoo",
-                    "piano",
-                    "banjo",
-                    "tattoo" ];
+    var wordList = ["baby",
+                    "birthday",
+                    "happy",
+                    "why",
+                    "eyes",
+                    "swimming",
+                    "word",
+                    "work",
+                    "world",
+                    "white",
+                    "whole",
+                    "window",
+                    "money",
+                    "lady",
+                    "own",
+                    "your" ];
         
     //var wordList = [ "Nessisary", "Success", "Urgent", "Excellent", "Dicipline", "Gigantic", "Generous" ];
  /*   var wordList = ['a','alone','ask','beg','build',
@@ -580,11 +623,109 @@ var SpellingController = spellSportApp.controller('SpellingController', function
             {
                 clazz = "good";
             }
+            else if (myGuess[i].toUpperCase() === $scope.current.session.target[i].toUpperCase())
+            {
+                clazz = "incorrectCase";
+            }
             else
             {
                 clazz = "bad";
             }
             buffer = buffer + "<span class='"+ clazz +"'>" + myGuess[i] + "</span>";                
+        }
+        $scope.current.session.showguess = buffer;
+    };  
+
+    function chIsPause(ch)
+    {
+        return (ch === '.' || ch === ',' || ch === ';');     
+    }
+
+    function chIsPauseOrWhiteSpace(ch)
+    {
+        return chIsPause(ch) || ch === ' ';     
+    }
+
+    function nextWord(dialog)
+    {
+        return nextPhrase(dialog, chIsPauseOrWhiteSpace);
+    }
+
+    function nextPhrase(dialog, isWordEnd)
+    {
+        for (var index = 0; index < dialog.length; index++)
+        {
+            if (isWordEnd(dialog[index]))
+            {
+                return dialog.substring(0, index + 1);
+            }
+        }
+        return dialog;
+    }
+
+    $scope.checkSoFarStory = function checkSoFarStory(event) 
+    {
+        var myGuess = $scope.current.session.guess;
+        var lastChar = myGuess[myGuess.length - 1];
+
+        var currentStory = stories[$scope.current.story.index];
+
+        if (myGuess.length === currentStory.length)
+        {
+            //story finished. Hurrar!
+            $scope.current.story.storyFinishedBanner= "<h2 class='storyfinished'>The end - well done. Fin.</h2>"        
+        }
+
+        var readSoFar = currentStory.substring(0, myGuess.length);
+        var readNext = currentStory.substring(myGuess.length);
+
+        if (myGuess && (chIsPause(lastChar)))//got to end of a sentance...
+        {
+            $scope.say(nextPhrase(readNext, chIsPause));     
+        }
+        else if (myGuess && lastChar === ' ')//got to end of a word...
+        {
+            //was last word correct?
+            var expectedWord = lastWord(readSoFar);
+            var actualWord = lastWord(myGuess);
+            if (actualWord === expectedWord)
+            {
+                //if so sound next word,                
+                $scope.say(nextWord(readNext));
+            }
+            else {
+                //if not say correct word....
+                $scope.say(actualWord + ", target word is: " + expectedWord);            
+            }
+        }
+        else if (!myGuess || myGuess.length == 0)
+        {
+            $scope.say(nextPhrase(stories[$scope.current.story.index][0], 0));            
+        }
+        
+        var buffer = "";
+
+        for (var i = 0; i < myGuess.length; i++)
+        {
+            var clazz;
+            var ch = myGuess[i];
+            if (myGuess[i] === $scope.current.session.target[i])
+            {
+                clazz = "good";
+            }
+            else if (myGuess[i].toUpperCase() === $scope.current.session.target[i].toUpperCase())
+            {
+                clazz = "incorrectCase";
+            }
+            else
+            {
+                clazz = "bad";
+                if (ch === ' ')
+                {
+                    ch = '_';
+                }
+            }
+            buffer = buffer + "<span class='"+ clazz +"'>" + ch + "</span>";                
         }
         $scope.current.session.showguess = buffer;
     };  
@@ -597,7 +738,7 @@ var SpellingController = spellSportApp.controller('SpellingController', function
         for (var i = 0; i < keys.length; i++)
         {
             var word = $scope.current.words[keys[i]];
-            if (word.success > word.failCount) {
+            if (word.success > word.failCount && word.success > 1) {
                 masteredWords++;
             }
         }
@@ -617,7 +758,6 @@ var SpellingController = spellSportApp.controller('SpellingController', function
 
         localStorage[$scope.current.user.toUpperCase()] = JSON.stringify($scope.current);
     };
-
 
     $scope.check = function check() {
 
@@ -651,11 +791,11 @@ var SpellingController = spellSportApp.controller('SpellingController', function
                 }
             }
 
-            var stem = clj_fuzzy.stemmers.lovins(target);
+            /*var stem = clj_fuzzy.stemmers.lovins(target);
             if (!(stem === target) )
             {
                 description = "<b>" + stem + "</b> stem of  " +  target + ": " + description;
-            }
+            }*/
 
             var wordStats = $scope.current.words[target];
             if (typeof wordStats === "undefined")
@@ -800,27 +940,12 @@ var SpellingController = spellSportApp.controller('SpellingController', function
     }
 
     $scope.sayTarget = function sayTarget() {
-        var utter = new SpeechSynthesisUtterance($scope.current.session.target); 
-        utter.lang = 'en-UK'; 
-        utter.rate = 1;
-
-        var voices = window.speechSynthesis.getVoices();
-        if (voices.length > 0)
-        {        
-            utter.voice = voices[Math.floor((Math.random() * voices.length))]
-            //utter.voice = voices.filter(function(voice) { return voice.name == 'Google UK English Male'; })[0];
-        }
-     //   debugger;  
-
-        window.speechSynthesis.speak(utter);
+        $scope.say($scope.current.session.target);
         document.getElementById('entry').focus();
     };
 
     $scope.sayGuess = function sayGuess() {
-        var utter = new SpeechSynthesisUtterance($scope.current.session.guess); 
-        utter.lang = 'en-UK'; 
-        utter.rate = 1;
-        window.speechSynthesis.speak(utter);
+        $scope.say($scope.current.session.guess);
         document.getElementById('entry').focus();
     };
 
@@ -847,6 +972,24 @@ var SpellingController = spellSportApp.controller('SpellingController', function
         $scope.current.test.total = total;
         $scope.next();
     };
+
+    $scope.startStory = function startStory() {
+        //var total = stories[$scope.current.level - 1].length;
+        $scope.current.story = {
+           index: 0,
+           line: 0,
+        }
+        
+        $scope.current.session.target = stories[$scope.current.story.index][0];
+
+        $scope.checkSoFarStory();
+    };
+    $scope.stopStory = function startStory() {
+        //var total = stories[$scope.current.level - 1].length;
+        $scope.current.story = undefined;
+        //$scope.current.test.total = total;
+    };
+    
     $scope.stopTest = function stopTest() {
         $scope.current.inTest = false;
         $scope.current.test = undefined;        
@@ -858,7 +1001,7 @@ var SpellingController = spellSportApp.controller('SpellingController', function
      'in need of practice.',
      'ok, could be worse!',
      'a good start',
-     'ok',
+     'halfway there',
      'a solid foundation',
      'pretty good.',
      'cracking',
@@ -881,7 +1024,7 @@ var SpellingController = spellSportApp.controller('SpellingController', function
                 //sucess or failure.
                // alert($scope.current.test.correct " out of " + total + " is " + platitudes[$scope.current.test.correct]);
             }
-        }
+        } 
 
         $scope.current.session.correct = false;
 
@@ -912,7 +1055,6 @@ var SpellingController = spellSportApp.controller('SpellingController', function
         $scope.current.session.word = wordStats;
         $scope.sayTarget();
     };
-
 
     function pickNextWord()
     {
@@ -986,8 +1128,14 @@ describe('SpellSport Tests', function() {
 
 });
     describe('Setting screen', function() {
+        it('when I change the first name, it should remember my nickname.', function() {
+
+        });
+        
         it('should let me pick from a list of known users', function() {});
+
         it('should remember my nickname, level and stats from last time.', function() {});
+        it('should disable other tabs until a valid name has been choisen.', function() {});
     });
 
     describe('Challenge screen', function() {
@@ -1014,25 +1162,36 @@ describe('SpellSport Tests', function() {
 
         it('should start on the level I am currently on.', function() {
             scope.startTest();
-            expect(scope.current.level).toBe(1);
-
+            expect(scope.current.level).not.toBeUndefined();
         });
         it('should ask the first question when I press start', function() {
+        
             scope.startTest();
-            expect(scope.current.target).
+                
+            expect(scope.current.session.target).not.toBeUndefined();
             expect(scope.current.test).toEqual(jasmine.objectContaining({ 
                 correct : 0,
                 index : 1, 
             }));
         });
-        it('should say the target word when I click on the croc.', function(){}); 
+        it('should say the target word when I click on the croc.', function(){
+            scope.startTest();
+            scope.crocClicked();
+        }); 
         it('should say my word when I click on speak.', function(){}); 
         it('should tell me if Ive got it right if I spell it right', function(){}); 
         it('should tell me where its not right if I spell it differently', function(){}); 
         it('should not repeat the same word in a challenge', function(){}); 
         
     });
-
+    describe('Story screen', function() {
+        it('should allow me to choose a story.', function(){}); 
+        it('should say the first line when I click on start', function(){}); 
+        
+        it('when I enter an incorrect word, once I press space it should tell me', function(){}); 
+        it('when I enter a correct word, once I press space it should tell me the next word to type.', function(){}); 
+        it('should announce when I have reached the end of the story.', function(){}); 
+    });
 });
 
 (function() {
@@ -1063,10 +1222,11 @@ describe('SpellSport Tests', function() {
 
 
     </script>
-  <span class="version"></span>
+    
+  <!--span class="version"></span>
                  <script>
   (document.querySelector(".version") || {}).innerHTML = (typeof jasmine !== "undefined") ? jasmine.version : "";
-</script>
+</script-->
 
     </body>
 </html>
